@@ -3,7 +3,6 @@ import { query } from '../../db/pool';
 import { encrypt, decrypt } from '../../utils/encryption';
 import { logger } from '../../utils/logger';
 import { AppError } from '../../middleware/errorHandler';
-import { AuthRequest } from '../../middleware/auth';
 
 /**
  * Generate a secure API key for a tenant

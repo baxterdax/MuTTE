@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { authenticate, authenticateAdmin } from '../../middleware/auth';
+import { authenticateAdmin } from '../../middleware/auth';
 import * as tenantController from '../controllers/tenantController';
 
 const router = Router();

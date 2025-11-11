@@ -1,6 +1,6 @@
 export type SecretsProvider = 'env' | 'aws-ssm' | 'vault';
 
-let cache = new Map<string, { value?: string; expires: number }>();
+const cache = new Map<string, { value?: string; expires: number }>();
 
 function ttl() {
   const ms = parseInt(process.env.SECRETS_CACHE_TTL_MS || '30000', 10);

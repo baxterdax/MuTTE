@@ -1,17 +1,16 @@
 import { Response, NextFunction } from 'express';
-import { AuthRequest } from '../../middleware/auth';
 import { AppError } from '../../middleware/errorHandler';
 import { logger } from '../../utils/logger';
 import { query, pool } from '../../db/pool';
 import { decrypt } from '../../utils/encryption';
 import { renderTemplate } from '../../utils/template';
 import { sendWebhook } from '../../utils/webhook';
-import crypto from 'crypto';
 
 // Runtime import to avoid TypeScript issues
 function getNodemailer() {
   try {
-    // @ts-ignore - Bypass TypeScript for require
+    // dynamic require avoids ESM/CJS interop issues without adding a top-level import
+    // eslint-disable-next-line @typescript-eslint/no-var-requires
     return require('nodemailer');
   } catch (error) {
     logger.error('Failed to import nodemailer:', error);
@@ -197,7 +196,7 @@ export const sendEmail = async (
           error: (error as any)?.message || 'Unknown error',
         }).catch(() => {});
       }
-    } catch {}
+    } catch (e) { /* noop */ }
 
     next(error);
   } finally {

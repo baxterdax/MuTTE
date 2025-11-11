@@ -1,12 +1,11 @@
-import { Request, Response, NextFunction } from 'express';
+import { Request } from 'express';
 import rateLimit from 'express-rate-limit';
-import { AuthRequest } from './auth';
 
 export const createRateLimiter = () => {
   return rateLimit({
     windowMs: 1 * 60 * 1000, // 1 minute
-    max: async (req: Request) => {
-      const authReq = req as AuthRequest;
+    max: async (_req: Request) => {
+      // Future: per-tenant dynamic limits using (req as AuthRequest).tenant
       // Default rate limit per tenant
       return parseInt(process.env.MAX_REQUESTS_PER_MINUTE || '100', 10);
     },

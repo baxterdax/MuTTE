@@ -10,6 +10,8 @@
     "test": "jest",
     "test:watch": "jest --watch",
     "test:coverage": "jest --coverage",
+    "typecheck": "tsc --noEmit",
+  "lint:ci": "eslint . --ext .ts --max-warnings=0",
     "db:init": "node dist/db/init.js",
     "lint": "eslint . --ext .ts",
     "lint:fix": "eslint . --ext .ts --fix",

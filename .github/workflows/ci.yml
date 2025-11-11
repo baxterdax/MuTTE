@@ -13,6 +13,10 @@ jobs:
         with:
           node-version: '20'
           cache: 'npm'
+      - name: Typecheck
+        run: npm run typecheck
+      - name: Lint
+        run: npm run lint:ci
       - run: npm install
       - run: npm run build
       - run: npm test -- --coverage
