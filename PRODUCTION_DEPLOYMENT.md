@@ -1,8 +1,8 @@
-# MaTTE Production Deployment Guide
+# MuTTE Production Deployment Guide
 
 ## Production Server Deployment
 
-This guide details how to deploy MaTTE to your production server alongside existing services using Docker and Traefik reverse proxy.
+This guide details how to deploy MuTTE to your production server alongside existing services using Docker and Traefik reverse proxy.
 
 ---
 

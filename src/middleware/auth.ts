@@ -29,7 +29,7 @@ export const authenticate = async (
     }
 
     const result = await query(
-      'SELECT id, name, smtp_host, smtp_port, smtp_user, smtp_pass, smtp_secure, from_email FROM tenants WHERE api_key = $1',
+      'SELECT id, name, smtp_host, smtp_port, smtp_user, smtp_pass, smtp_secure, from_email, webhook_url FROM tenants WHERE api_key = $1',
       [apiKey]
     );
 
@@ -39,7 +39,7 @@ export const authenticate = async (
 
     const tenant = result.rows[0];
     req.tenantId = tenant.id;
-    req.tenant = tenant;
+  req.tenant = tenant;
     next();
   } catch (error) {
     next(error);

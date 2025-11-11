@@ -48,6 +48,27 @@ const router = Router();
  *                 type: string
  *               htmlBody:
  *                 type: string
+ *               variables:
+ *                 type: object
+ *                 additionalProperties: true
+ *               attachments:
+ *                 type: array
+ *                 items:
+ *                   type: object
+ *                   properties:
+ *                     filename:
+ *                       type: string
+ *                     content:
+ *                       type: string
+ *                       description: Base64 content if using encoding base64
+ *                     encoding:
+ *                       type: string
+ *                       enum: [base64]
+ *                     path:
+ *                       type: string
+ *                       description: Remote URL or local path (if allowed)
+ *                     contentType:
+ *                       type: string
  *     responses:
  *       200:
  *         description: Email sent successfully

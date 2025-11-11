@@ -4,6 +4,9 @@ import { AppError } from '../../middleware/errorHandler';
 import { logger } from '../../utils/logger';
 import { query, pool } from '../../db/pool';
 import { decrypt } from '../../utils/encryption';
+import { renderTemplate } from '../../utils/template';
+import { sendWebhook } from '../../utils/webhook';
+import crypto from 'crypto';
 
 // Runtime import to avoid TypeScript issues
 function getNodemailer() {
@@ -25,7 +28,7 @@ export const sendEmail = async (
   let logId: number | null = null;
   
   try {
-    const { to, from, subject, htmlBody, textBody, cc, bcc } = req.body;
+  const { to, from, subject, htmlBody, textBody, cc, bcc, variables, attachments } = req.body;
 
     if (!to || !subject || !htmlBody) {
       throw new AppError('Missing required fields: to, subject, htmlBody', 400);
@@ -72,21 +75,62 @@ export const sendEmail = async (
       socketTimeout: 30000,
     });
 
+    // Render templates (simple variable substitution)
+    const renderedHtml = htmlBody ? renderTemplate(htmlBody, variables) : undefined;
+    const renderedText = textBody ? renderTemplate(textBody, variables) : undefined;
+
     // Prepare email options
-    const mailOptions = {
+    const mailOptions: any = {
       from: from || tenant.from_email,
       to: toAddresses.join(', '),
       cc: ccAddresses.length > 0 ? ccAddresses.join(', ') : undefined,
       bcc: bccAddresses.length > 0 ? bccAddresses.join(', ') : undefined,
       subject,
-      html: htmlBody,
-      text: textBody || undefined,
+      html: renderedHtml,
+      text: renderedText,
     };
+
+    // Attachments support
+    if (Array.isArray(attachments) && attachments.length > 0) {
+      mailOptions.attachments = attachments.map((a: any) => ({
+        filename: a.filename,
+        content: a.content,
+        encoding: a.encoding,
+        path: a.path,
+        contentType: a.contentType,
+      }));
+    }
 
     logger.info(`Sending email via ${decrypt(tenant.smtp_host)}: ${subject} -> ${toAddresses.join(', ')}`);
 
-    // Send email
-    const info = await transporter.sendMail(mailOptions);
+    // Retry logic for transient failures
+    const maxAttempts = parseInt(process.env.RETRY_MAX_ATTEMPTS || '3', 10);
+    const baseDelay = parseInt(process.env.RETRY_BASE_DELAY_MS || '500', 10);
+    let lastError: any = null;
+    let info: any = null;
+
+    const shouldRetry = (err: any) => {
+      const transientCodes = ['ETIMEDOUT', 'ESOCKET', 'ECONNRESET', 'EAI_AGAIN'];
+      if (err && transientCodes.includes(err.code)) return true;
+      const rc = err && (err.responseCode || err.code);
+      return rc && [421, 450, 451, 452].includes(Number(rc));
+    };
+
+    for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+      try {
+        info = await transporter.sendMail(mailOptions);
+        lastError = null;
+        break;
+      } catch (err: any) {
+        lastError = err;
+        if (attempt >= maxAttempts || !shouldRetry(err)) break;
+        const delay = baseDelay * Math.pow(2, attempt - 1);
+        logger.warn(`Send attempt ${attempt} failed, retrying in ${delay}ms: ${err.message || err}`);
+        await new Promise((r) => setTimeout(r, delay));
+      }
+    }
+
+    if (!info && lastError) throw lastError;
 
     // Update log as sent
     await client.query(
@@ -98,6 +142,19 @@ export const sendEmail = async (
     await client.query('COMMIT');
 
     logger.info(`Email sent successfully: ${info.messageId} for tenant ${tenant.id}`);
+
+    // Fire webhook (non-blocking)
+    const webhookUrl = tenant.webhook_url || process.env.TENANT_DEFAULT_WEBHOOK;
+    if (webhookUrl) {
+      sendWebhook(webhookUrl, {
+        event: 'sent',
+        tenantId: String(tenant.id),
+        emailLogId: Number(logId!),
+        to: toAddresses,
+        subject,
+        timestamp: new Date().toISOString(),
+      }).catch(() => {});
+    }
 
     res.json({
       success: true,
@@ -122,6 +179,26 @@ export const sendEmail = async (
     }
     
     logger.error('Email sending failed:', error);
+
+    // Fire webhook (non-blocking) on failure
+    try {
+      const tenant = (req as any).tenant;
+      const to = req.body?.to;
+      const toAddresses = Array.isArray(to) ? to : to ? [to] : [];
+      const webhookUrl = tenant?.webhook_url || process.env.TENANT_DEFAULT_WEBHOOK;
+      if (webhookUrl && logId) {
+        sendWebhook(webhookUrl, {
+          event: 'failed',
+          tenantId: String(tenant.id),
+          emailLogId: Number(logId),
+          to: toAddresses,
+          subject: req.body?.subject,
+          timestamp: new Date().toISOString(),
+          error: (error as any)?.message || 'Unknown error',
+        }).catch(() => {});
+      }
+    } catch {}
+
     next(error);
   } finally {
     client.release();

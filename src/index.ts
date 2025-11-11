@@ -6,6 +6,7 @@ import { errorHandler } from './middleware/errorHandler';
 import { logger } from './utils/logger';
 import tenantsRouter from './api/routes/tenants';
 import sendRouter from './api/routes/send';
+import demoRouter from './api/routes/demo';
 
 dotenv.config();
 
@@ -26,6 +27,7 @@ app.get('/health', (_req, res) => {
 // API Routes
 app.use('/tenants', tenantsRouter);
 app.use('/send', sendRouter);
+app.use('/demo', demoRouter);
 
 // Error handling
 app.use(errorHandler);
@@ -33,7 +35,7 @@ app.use(errorHandler);
 // Start server
 if (require.main === module) {
   app.listen(PORT, () => {
-    logger.info(`MTE-API server running on port ${PORT}`);
+  logger.info(`MuTTE server running on port ${PORT}`);
     logger.info(`Environment: ${process.env.NODE_ENV}`);
   });
 }

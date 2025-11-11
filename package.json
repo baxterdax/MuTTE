@@ -1,7 +1,7 @@
 {
-  "name": "matte",
+  "name": "mutte",
   "version": "1.0.0",
-  "description": "Multi-Tenant Transactional Email API - Simple SMTP relay for multi-client setups",
+  "description": "MuTTE - Multi-Tenant Transactional Email API: Simple SMTP relay for multi-client setups",
   "main": "dist/index.js",
   "scripts": {
     "build": "tsc",

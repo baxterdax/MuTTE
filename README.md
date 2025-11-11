@@ -1,8 +1,12 @@
-# Welcome to MaTTE: Your Multi-Tenant Email Solution
+# Welcome to MuTTE: Your Multi-Tenant Email Solution
 
-MaTTE (Multi-Tenant Transactional Email API) is your go-to solution for managing transactional emails across multiple clients. Whether you're an agency or a developer, MaTTE simplifies email sending while ensuring security and scalability.
+![CI](https://github.com/baxterdax/MaTTE/actions/workflows/ci.yml/badge.svg)
+![CodeQL](https://img.shields.io/github/actions/workflow/status/baxterdax/MaTTE/ci.yml?label=codeql)
+![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)
 
-## Why Choose MaTTE?
+MuTTE (Multi-Tenant Transactional Email API) is your go-to solution for managing transactional emails across multiple clients. Whether you're an agency or a developer, MuTTE simplifies email sending while ensuring security and scalability.
+
+## Why Choose MuTTE?
 
 - **Secure and Reliable**: Each tenant's SMTP credentials are securely encrypted.
 - **Flexible Integration**: Works seamlessly with any SMTP provider.
@@ -65,7 +69,7 @@ docker-compose up -d
 
 ## Example Use Case
 
-Imagine you're managing email campaigns for multiple clients. With MaTTE, you can:
+Imagine you're managing email campaigns for multiple clients. With MuTTE, you can:
 1. Add each client as a tenant.
 2. Store their SMTP credentials securely.
 3. Use the API to send emails on their behalf.
@@ -87,9 +91,13 @@ Content-Type: application/json
 X-API-Key: tenant_api_key
 
 {
-  "to": "recipient@example.com",
-  "subject": "Hello!",
-  "htmlBody": "<h1>Welcome!</h1>"
+   "to": "recipient@example.com",
+   "subject": "Hello!",
+   "htmlBody": "<h1>Welcome {{name}}!</h1>",
+   "variables": { "name": "Ada" },
+   "attachments": [
+      { "filename": "hi.txt", "content": "SGVsbG8=", "encoding": "base64" }
+   ]
 }
 ```
 
@@ -99,7 +107,7 @@ GET /emails?page=1&limit=20
 X-API-Key: tenant_api_key
 ```
 
-For a full list of endpoints, check the [API Documentation](docs/).
+For the full API, see `docs/api.md` and `docs/sending-emails.md`. Swagger annotations are included inline.
 
 ## Need Help?
 
@@ -110,8 +118,21 @@ If you run into issues:
 
 ## Join the Community
 
-We'd love your contributions! Fork the repo, make your changes, and submit a pull request. Together, we can make MaTTE even better.
+We'd love your contributions! See `CONTRIBUTING.md` and `GOVERNANCE.md` for our process. Together, we can make MuTTE even better.
+
+## Governance & Releases
+- Governance: `GOVERNANCE.md`
+- Releases: `RELEASE_PROCESS.md`
+- Roadmap: `ROADMAP.md`
+
+## Error Handling Examples
+- Missing required fields: returns `400` with message.
+- Invalid API key: returns `401`.
+- Rate limit exceeded: `429` with retry advice.
+- SMTP transient error: retries with exponential backoff; on failure, request returns an error and status is logged.
+
+See `docs/error-handling.md` for details.
 
 ---
 
-Ready to get started? Dive in and simplify your email management with MaTTE!
+Ready to get started? Dive in and simplify your email management with MuTTE!
